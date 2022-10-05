@@ -1,17 +1,39 @@
 #!/bin/bash
 
 set -e
-
 #set -x
 
-# Management FQDN.
-CORE_MGMT_FQDN="${1:-manage.ubyon.com}"
+usage="""usage: $0 [options]
 
-# TrustGate FQDN that ubyonlink connects to.
-ULINK_SERVER_FQDN="${2:-edge-device.ubyon.com}"
+Options:
+  -h  This help message.
+  -d  Output directory for installation generated files.
+  -t  Ubyon TrustGate FQDN that ubyonlink connects to.
+"""
 
-# Output directory for the k8s yaml files.
-OUTDIR="${3:-.}"
+UBYON_TG_FQDN="edge-device.ubyon.com"
+OUTDIR="."
+
+while getopts "hd:t:" opt; do
+  case "$opt" in
+    h)
+      echo -e "$usage"
+      exit 0
+      ;;
+    d)
+      OUTDIR="$OPTARG"
+      ;;
+    t)
+      UBYON_TG_FQDN="$OPTARG"
+      ;;
+    *)
+      echo
+      echo -e "$usage" 1>&2
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
 
 INSTALL_FINISHED="$OUTDIR/.install_ubyonlink"
 
@@ -22,9 +44,11 @@ fi
 
 install_basic_packages()
 {
-  echo "==> Install basic OS packages."
-  sudo apt-get update > /dev/null
-  sudo apt-get install -y uuid-runtime > /dev/null
+  if ! [ -x "$(command -v uuidgen)" ] ; then
+    echo "==> Install basic OS packages."
+    sudo apt-get update > /dev/null
+    sudo apt-get install -y uuid-runtime > /dev/null
+  fi
 }
 
 install_k8s_container()
@@ -83,12 +107,16 @@ install_ubyonlink()
   install_basic_packages
   
   local ulink_id=$(uuidgen)
-  install_k8s_container $ulink_id $ULINK_SERVER_FQDN
+  local host_name=$(hostname)
+  local reg_info="{ \"ulinkName\":\"$host_name\" }"
+  local base64_reg_info=`echo -n $reg_info | base64`
+
+  install_k8s_container $ulink_id $UBYON_TG_FQDN
 
   echo
   echo "==> Installation completed successfully."
   echo "Please register your ubyonlink via: "
-  echo "  https://$CORE_MGMT_FQDN/ucms/v1/register/ulink/$ulink_id"
+  echo "  https://manage.ubyon.com/ucms/v1/register/ulink/$ulink_id?regInfo=$base64_reg_info"
 }
 
 mkdir -p "$OUTDIR"
