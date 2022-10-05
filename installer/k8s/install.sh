@@ -4,14 +4,14 @@ set -e
 
 #set -x
 
-# Output directory for the k8s yaml files.
-OUTDIR="${1:-.}"
-
 # Management FQDN.
 CORE_MGMT_FQDN="${1:-manage.ubyon.com}"
 
 # TrustGate FQDN that ubyonlink connects to.
 ULINK_SERVER_FQDN="${2:-edge-device.ubyon.com}"
+
+# Output directory for the k8s yaml files.
+OUTDIR="${3:-.}"
 
 INSTALL_FINISHED="$OUTDIR/.install_ubyonlink"
 

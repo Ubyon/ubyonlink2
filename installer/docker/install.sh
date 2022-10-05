@@ -10,14 +10,14 @@ if [ $(id -u) == 0 ] ; then
   exit -1
 fi
 
-# Output directory to mark the installation complete.
-OUTDIR="${1:-.}"
-
 # Management FQDN.
 CORE_MGMT_FQDN="${1:-manage.ubyon.com}"
 
 # TrustGate FQDN that ubyonlink connects to.
 ULINK_SERVER_FQDN="${2:-edge-device.ubyon.com}"
+
+# Output directory to mark the installation complete.
+OUTDIR="${3:-.}"
 
 INSTALL_FINISHED="$OUTDIR/.install_ubyonlink"
 
