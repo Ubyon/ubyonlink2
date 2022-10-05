@@ -82,13 +82,13 @@ install_ubyonlink()
 {
   install_basic_packages
   
-  local cluster_id=$(uuidgen)
-  install_k8s_container $cluster_id $ULINK_SERVER_FQDN
+  local ulink_id=$(uuidgen)
+  install_k8s_container $ulink_id $ULINK_SERVER_FQDN
 
   echo
   echo "==> Installation completed successfully."
   echo "Please register your ubyonlink via: "
-  echo "  https://$CORE_MGMT_FQDN/ucms/register/$cluster_id"
+  echo "  https://$CORE_MGMT_FQDN/ucms/v1/register/ulink/$ulink_id"
 }
 
 mkdir -p "$OUTDIR"
