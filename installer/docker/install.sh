@@ -29,6 +29,7 @@ fi
 install_basic_packages()
 {
   echo "==> Install basic OS packages."
+  sudo apt-get update > /dev/null
   sudo apt-get install -y uuid-runtime > /dev/null
 }
 
