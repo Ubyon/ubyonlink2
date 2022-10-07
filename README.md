@@ -1,2 +1,2 @@
-# ubyonlink
-Ubyon connectivity agent
+# ubyonac
+Ubyon AppConnector

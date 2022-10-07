@@ -8,7 +8,7 @@ usage="""usage: $0 [options]
 Options:
   -h  This help message.
   -d  Output directory for installation generated files.
-  -t  Ubyon TrustGate FQDN that ubyonlink connects to.
+  -t  Ubyon TrustGate FQDN that AppConnector connects to.
 """
 
 UBYON_TG_FQDN="edge-device.ubyon.com"
@@ -35,7 +35,7 @@ while getopts "hd:t:" opt; do
 done
 shift $((OPTIND - 1))
 
-INSTALL_FINISHED="$OUTDIR/.install_ubyonlink"
+INSTALL_FINISHED="$OUTDIR/.install_ubyonac"
 
 if [ -f $INSTALL_FINISHED ] ; then
   echo "Install has already finished."
@@ -58,26 +58,26 @@ install_k8s_container()
   local mars_cluster_id="$1"
   local mars_ulink_endpoint="$2"
 
-  cat > $OUTDIR/ubyonlink.yaml <<EOF
+  cat > $OUTDIR/ubyonac.yaml <<EOF
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: ubyonlink
+  name: ubyonac
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: ubyonlink
-  serviceName: ubyonlink
+      app: ubyonac
+  serviceName: ubyonac
   template:
     metadata:
       labels:
-        app: ubyonlink
+        app: ubyonac
         version: 1.0.0
     spec:
       hostNetwork: true
       containers:
-      - name: ubyonlink
+      - name: ubyonac
         imagePullPolicy: Always
         image: quay.io/ubyon/mars-ulink:1.0.0
         command: ["/home/ubyon/bin/mars"]
@@ -99,10 +99,10 @@ spec:
                 fieldPath: status.podIP
 EOF
 
-  kubectl apply -f $OUTDIR/ubyonlink.yaml
+  kubectl apply -f $OUTDIR/ubyonac.yaml
 }
 
-install_ubyonlink()
+install_ubyonac()
 {
   install_basic_packages
   
@@ -115,13 +115,13 @@ install_ubyonlink()
 
   echo
   echo "==> Installation completed successfully."
-  echo "Please register your ubyonlink via: "
+  echo "Please register your Ubyon AppConnector via: "
   echo "  https://manage.ubyon.com/ucms/v1/register/ulink/$ulink_id?regInfo=$base64_reg_info"
 }
 
 mkdir -p "$OUTDIR"
 
-install_ubyonlink
+install_ubyonac
 
 touch $INSTALL_FINISHED
 

@@ -8,7 +8,7 @@ usage="""usage: $0 [options]
 Options:
   -h  This help message.
   -d  Output directory for installation generated files.
-  -t  Ubyon TrustGate FQDN that ubyonlink connects to.
+  -t  Ubyon TrustGate FQDN that AppConnector connects to.
 """
 
 UBYON_TG_FQDN="edge-device.ubyon.com"
@@ -42,7 +42,7 @@ if [ $(id -u) == 0 ] ; then
   exit -1
 fi
 
-INSTALL_FINISHED="$OUTDIR/.install_ubyonlink"
+INSTALL_FINISHED="$OUTDIR/.install_ubyonac"
 if [ -f $INSTALL_FINISHED ] ; then
   echo "Install has already finished."
   exit
@@ -66,7 +66,7 @@ install_docker_container()
   local user_name=$(id -u -n)
   local group_name=$(id -g -n)
 
-  sudo tee /etc/systemd/system/ubyonlink.service > /dev/null <<EOF
+  sudo tee /etc/systemd/system/ubyonac.service > /dev/null <<EOF
 [Unit]
 Description=UbyonLink
 After=docker.service
@@ -76,12 +76,12 @@ TimeoutStartSec=0
 User=$user_name
 Group=$group_name
 ExecStartPre=/usr/bin/docker pull quay.io/ubyon/mars-ulink:1.0.0
-ExecStart=/usr/bin/docker run --rm --network host --name ubyonlink \\
+ExecStart=/usr/bin/docker run --rm --network host --name ubyonac \\
     quay.io/ubyon/mars-ulink:1.0.0 /home/ubyon/bin/mars \\
     --mars_cluster_id=$mars_cluster_id \\
     --mars_ulink_endpoint=$mars_ulink_endpoint \\
     --v=0
-ExecStop=/usr/bin/docker stop ubyonlink
+ExecStop=/usr/bin/docker stop ubyonac
 Restart=always
 RestartSec=20
 
@@ -89,12 +89,12 @@ RestartSec=20
 WantedBy=multi-user.target
 EOF
 
-  # Start ubyonlink docker container.
-  sudo systemctl start --no-block ubyonlink
-  sudo systemctl enable ubyonlink
+  # Start ubyonac docker container.
+  sudo systemctl start --no-block ubyonac
+  sudo systemctl enable ubyonac
 }
 
-install_ubyonlink()
+install_ubyonac()
 {
   install_basic_packages
   
@@ -107,13 +107,13 @@ install_ubyonlink()
 
   echo
   echo "==> Installation completed successfully."
-  echo "Please register your ubyonlink via: "
+  echo "Please register your Ubyon AppConnector via: "
   echo "  https://manage.ubyon.com/ucms/v1/register/ulink/$ulink_id?regInfo=$base64_reg_info"
 }
 
 mkdir -p "$OUTDIR"
 
-install_ubyonlink
+install_ubyonac
 
 touch $INSTALL_FINISHED
 

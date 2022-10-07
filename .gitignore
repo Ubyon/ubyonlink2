@@ -127,5 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+ubyonac.yaml
 ubyonlink.yaml
+.install_ubyonac
 .install_ubyonlink
