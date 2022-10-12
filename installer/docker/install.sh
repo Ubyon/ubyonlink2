@@ -100,7 +100,7 @@ install_ubyonac()
   
   local ulink_id=$(uuidgen)
   local host_name=$(hostname)
-  local reg_info="{ \"ulinkName\":\"$host_name\" }"
+  local reg_info="{ \"ulinkId\":\"$ulink_id\", \"ulinkName\":\"$host_name\" }"
   local base64_reg_info=`echo -n $reg_info | base64`
 
   install_docker_container $ulink_id $UBYON_TG_FQDN
@@ -108,7 +108,7 @@ install_ubyonac()
   echo
   echo "==> Installation completed successfully."
   echo "Please register your Ubyon AppConnector via: "
-  echo "  https://manage.ubyon.com/ucms/v1/register/ulink/$ulink_id?regInfo=$base64_reg_info"
+  echo "  https://manage.ubyon.com/admin-portal/ulink/register/reg_info=$base64_reg_info"
 }
 
 mkdir -p "$OUTDIR"
