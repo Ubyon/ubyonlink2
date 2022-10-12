@@ -101,7 +101,7 @@ install_ubyonac()
   local ulink_id=$(uuidgen)
   local host_name=$(hostname)
   local reg_info="{\"ulinkId\":\"$ulink_id\",\"ulinkName\":\"$host_name\"}"
-  local base64_reg_info=`echo -n $reg_info | base64`
+  local base64_reg_info=`echo -n $reg_info | base64 -w0`
 
   install_docker_container $ulink_id $UBYON_TG_FQDN
 
