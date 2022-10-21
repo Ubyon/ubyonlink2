@@ -35,7 +35,7 @@ while getopts "hd:t:" opt; do
 done
 shift $((OPTIND - 1))
 
-if [ $(id -u) == 0 ] ; then
+if [ $(id -u) = 0 ] ; then
   echo
   echo "Cannot run $0 in root. Run in sudo user!"
   echo
