@@ -69,7 +69,7 @@ EOF
   sudo apt-get update > /dev/null
 
   echo "==> Install Ubyon packages."
-  sudo apt-get install -y uuid-runtime ubyonac > /dev/null
+  sudo apt-get install -y uuid-runtime ubyon-ac > /dev/null
 }
 
 install_daemon()
