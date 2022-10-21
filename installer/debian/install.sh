@@ -89,11 +89,11 @@ After=network.target
 WorkingDirectory=/home/ubyon/bin
 User=ubyon
 Group=ubyon
-ExecStart=/home/ubyon/bin/mars-ulink \\
+ExecStart=bash -c 'source /etc/profile.d/ubyon_env.sh && /home/ubyon/bin/mars-ulink \\
     --mars_cluster_id=$mars_cluster_id \\
     --mars_ulink_endpoint=$mars_ulink_endpoint \\
-    --v=0
-TimeoutSec=20
+    --v=0'
+TimeoutSec=30
 Restart=on-failure
 
 [Install]
