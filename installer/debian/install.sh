@@ -77,6 +77,7 @@ install_packages()
   sudo grep "ubyon.github.io" /etc/apt/sources.list > /dev/null 2>&1 || setup_repo || return
 
   # Update package database.
+  echo "==> Run apt-get update."
   sudo apt-get update > /dev/null
 
   echo "==> Install Ubyon packages."
