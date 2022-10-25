@@ -42,9 +42,13 @@ if [ $(id -u) = 0 ] ; then
   exit -1
 fi
 
-if [[ "`lsb_release -cs`" != "focal" ]] ; then
+if [[ "`lsb_release -cs`" = "focal" ]] ; then
+  OS_VERSION="focal"
+elif [[ "`lsb_release -cs`" = "jammy" ]] ; then
+  OS_VERSION="jammy"
+else
   echo
-  echo "  This installation script is for Ubuntu 20.04 focal."
+  echo "  This installation script is for Ubuntu 20.04 and 22.04."
   echo
   exit -1
 fi
@@ -60,7 +64,7 @@ setup_repo()
   echo "==> Setup Ubyon debian repository."
 
   # Add the ubyon debian repo.
-  sudo sed -i '1s/^/deb http:\/\/ubyon.github.io\/debian\/ focal main\n/' /etc/apt/sources.list
+  sudo sed -i "1s/^/deb http:\/\/ubyon.github.io\/debian\/ $OS_VERSION main\n/" /etc/apt/sources.list
 
   # Set ubyon repository to have precedence over other repositories.
   sudo tee -a /etc/apt/preferences > /dev/null <<EOF
@@ -70,7 +74,7 @@ Pin-Priority: 1001
 EOF
 
   # Import its key.
-  curl https://ubyon.github.io/debian/ubyon.gpg.key | sudo tee /etc/apt/trusted.gpg.d/myrepo.asc
+  curl https://ubyon.github.io/debian/ubyon.gpg.key | sudo tee /etc/apt/trusted.gpg.d/myrepo.asc > /dev/null
 }
 
 install_packages()
