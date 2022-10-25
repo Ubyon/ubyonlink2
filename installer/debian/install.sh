@@ -48,7 +48,7 @@ if [ -f $INSTALL_FINISHED ] ; then
   exit
 fi
 
-install_packages()
+setup_repo()
 {
   echo "==> Setup Ubyon debian repository."
 
@@ -63,13 +63,18 @@ Pin-Priority: 1001
 EOF
 
   # Import its key.
-  curl https://ubyon.github.io/debian/ubyon.gpg.key | sudo apt-key add -
+  curl https://ubyon.github.io/debian/ubyon.gpg.key | sudo tee /etc/apt/trusted.gpg.d/myrepo.asc
+}
+
+install_packages()
+{
+  sudo grep "ubyon.github.io" /etc/apt/sources.list > /dev/null 2>&1 || setup_repo || return
 
   # Update package database.
   sudo apt-get update > /dev/null
 
   echo "==> Install Ubyon packages."
-  sudo apt-get install -y uuid-runtime ubyon-ac > /dev/null
+  sudo apt-get install -y uuid-runtime ubyon-ac || return
 }
 
 install_daemon()
@@ -101,6 +106,7 @@ WantedBy=multi-user.target
 EOF
 
   # Start ubyonac daemon.
+  sudo systemctl daemon-reload
   sudo systemctl start --no-block ubyonac
   sudo systemctl enable ubyonac
 }
@@ -108,7 +114,7 @@ EOF
 install_ubyonac()
 {
   # Install packages.
-  sudo grep "ubyon.github.io" /etc/apt/sources.list > /dev/null 2>&1 || install_packages
+  install_packages || return
   
   # Install daemon service files and start the daemon.
   local ulink_id=$(uuidgen)
@@ -116,7 +122,7 @@ install_ubyonac()
   local reg_info="{\"ulinkId\":\"$ulink_id\",\"ulinkName\":\"$host_name\"}"
   local base64_reg_info=`echo -n $reg_info | base64 -w0`
 
-  install_daemon $ulink_id $UBYON_TG_FQDN
+  install_daemon $ulink_id $UBYON_TG_FQDN || return
 
   echo
   echo "==> Installation completed successfully."
