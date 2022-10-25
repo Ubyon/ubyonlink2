@@ -42,11 +42,7 @@ if [ $(id -u) = 0 ] ; then
   exit -1
 fi
 
-if [[ "`lsb_release -cs`" = "focal" ]] ; then
-  OS_VERSION="focal"
-elif [[ "`lsb_release -cs`" = "jammy" ]] ; then
-  OS_VERSION="jammy"
-else
+if [[ "`lsb_release -cs`" != "focal" && "`lsb_release -cs`" != "jammy" ]] ; then
   echo
   echo "  This installation script is for Ubuntu 20.04 and 22.04."
   echo
@@ -64,7 +60,7 @@ setup_repo()
   echo "==> Setup Ubyon debian repository."
 
   # Add the ubyon debian repo.
-  sudo sed -i "1s/^/deb http:\/\/ubyon.github.io\/debian\/ $OS_VERSION main\n/" /etc/apt/sources.list
+  sudo sed -i "1s/^/deb http:\/\/ubyon.github.io\/debian\/ appconnector main\n/" /etc/apt/sources.list
   sudo sed -i "1s/^/deb http:\/\/ubyon.github.io\/debian\/ thirdparty main\n/" /etc/apt/sources.list
 
   # Set ubyon repository to have precedence over other repositories.
