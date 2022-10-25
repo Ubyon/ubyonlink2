@@ -42,8 +42,8 @@ if [ $(id -u) = 0 ] ; then
   exit -1
 fi
 
-if [ "`lsb_release -cs`" != "focal" && "`lsb_release -cs`" != "jammy" ] ; then
-  echo "  This installation script is for Ubuntu 20.04 or 22.04."
+if [ "`lsb_release -cs`" != "focal" ] ; then
+  echo "  This installation script is for Ubuntu 20.04 focal."
   echo
   exit -1
 fi
@@ -82,13 +82,6 @@ install_packages()
 
   echo "==> Install Ubyon packages."
   sudo apt-get install -y uuid-runtime ubyon-ac || return
-
-  # Patch OS dependent packages.
-  local boost_package="libboost-filesystem1.71.0"
-  if [ "`lsb_release -cs`" = "jammy" ] ; then
-    boost_package="libboost-filesystem1.74.0"
-  fi
-  apt-get install --no-install-recommends -y $boost_package > /dev/null
 }
 
 install_daemon()
