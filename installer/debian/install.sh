@@ -65,6 +65,7 @@ setup_repo()
 
   # Add the ubyon debian repo.
   sudo sed -i "1s/^/deb http:\/\/ubyon.github.io\/debian\/ $OS_VERSION main\n/" /etc/apt/sources.list
+  sudo sed -i "1s/^/deb http:\/\/ubyon.github.io\/debian\/ thirdparty main\n/" /etc/apt/sources.list
 
   # Set ubyon repository to have precedence over other repositories.
   sudo tee -a /etc/apt/preferences > /dev/null <<EOF
