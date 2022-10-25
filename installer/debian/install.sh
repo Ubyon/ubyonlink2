@@ -42,7 +42,7 @@ if [ $(id -u) = 0 ] ; then
   exit -1
 fi
 
-if [ "`lsb_release -cs`" != "focal" ] ; then
+if [[ "`lsb_release -cs`" != "focal" ]] ; then
   echo "  This installation script is for Ubuntu 20.04 focal."
   echo
   exit -1
