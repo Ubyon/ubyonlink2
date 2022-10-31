@@ -132,7 +132,7 @@ install_ubyonac()
   # Install daemon service files and start the daemon.
   local ulink_id=$(uuidgen)
   local host_name=$(hostname)
-  local reg_info="{\"ulinkId\":\"$ulink_id\",\"ulinkName\":\"$host_name\",\"ulinkLabels\":\"$USER_DEFINED_LABELS\"}"
+  local reg_info="{\"ulinkId\":\"$ulink_id\",\"ulinkName\":\"$host_name\",\"base64UlinkLabels\":\"$USER_DEFINED_LABELS\"}"
   local base64_reg_info=`echo -n $reg_info | base64 -w0`
 
   install_daemon $ulink_id $UBYON_TG_FQDN || return
