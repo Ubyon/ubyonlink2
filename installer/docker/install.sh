@@ -8,13 +8,14 @@ usage="""usage: $0 [options]
 Options:
   -h  This help message.
   -d  Output directory for installation generated files.
+  -f  JSON file that contains user defined labels.
   -t  Ubyon TrustGate FQDN that AppConnector connects to.
 """
 
 UBYON_TG_FQDN="edge-device.ubyon.com"
 OUTDIR="."
 
-while getopts "hd:t:" opt; do
+while getopts "hd:f:t:" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
@@ -22,6 +23,9 @@ while getopts "hd:t:" opt; do
       ;;
     d)
       OUTDIR="$OPTARG"
+      ;;
+    f)
+      USER_DEFINED_LABELS=`base64 -w0 "$OPTARG"`
       ;;
     t)
       UBYON_TG_FQDN="$OPTARG"
@@ -100,7 +104,7 @@ install_ubyonac()
   
   local ulink_id=$(uuidgen)
   local host_name=$(hostname)
-  local reg_info="{\"ulinkId\":\"$ulink_id\",\"ulinkName\":\"$host_name\"}"
+  local reg_info="{\"ulinkId\":\"$ulink_id\",\"ulinkName\":\"$host_name\",\"ulinkLabels\":\"$USER_DEFINED_LABELS\"}"
   local base64_reg_info=`echo -n $reg_info | base64 -w0`
 
   install_docker_container $ulink_id $UBYON_TG_FQDN
