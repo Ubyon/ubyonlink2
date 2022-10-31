@@ -82,7 +82,7 @@ install_packages()
   sudo apt-get update > /dev/null
 
   echo "==> Install Ubyon packages."
-  sudo apt-get install -y uuid-runtime ubyon-ac || return
+  sudo apt-get install -y binutils uuid-runtime ubyon-ac || return
 }
 
 install_daemon()
