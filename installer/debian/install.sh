@@ -113,6 +113,7 @@ ExecStart=bash -c 'source /etc/profile.d/ubyon_env.sh && /home/ubyon/bin/mars-ul
     --v=0'
 TimeoutSec=30
 Restart=on-failure
+RestartSec=20
 
 [Install]
 WantedBy=multi-user.target
