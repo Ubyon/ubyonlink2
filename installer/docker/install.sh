@@ -11,7 +11,7 @@ Options:
   -t  Ubyon TrustGate FQDN that AppConnector connects to.
 """
 
-UBYON_TG_FQDN="edge-device.ubyon.com"
+UBYON_TG_FQDN="ulink.ubyon.com"
 OUTDIR="."
 
 while getopts "hd:t:" opt; do
