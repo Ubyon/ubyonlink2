@@ -42,9 +42,9 @@ if [ $(id -u) = 0 ] ; then
   exit -1
 fi
 
-if [[ "`lsb_release -cs`" != "focal" && "`lsb_release -cs`" != "jammy" ]] ; then
+if [[ "`lsb_release -cs`" != "bionic" && "`lsb_release -cs`" != "focal" && "`lsb_release -cs`" != "jammy" ]] ; then
   echo
-  echo "  This installation script is for Ubuntu 20.04 and 22.04."
+  echo "  This installation script is for Ubuntu 18.04, 20.04 and 22.04."
   echo
   exit -1
 fi
@@ -102,7 +102,7 @@ After=network.target
 WorkingDirectory=/home/ubyon/bin
 User=ubyon
 Group=ubyon
-ExecStart=bash -c 'source /etc/profile.d/ubyon_env.sh && /home/ubyon/bin/mars-ulink \\
+ExecStart=/bin/bash -c 'source /etc/profile.d/ubyon_env.sh && /home/ubyon/bin/mars-ulink \\
     --mars_cluster_id=$mars_cluster_id \\
     --mars_ulink_endpoint=$mars_ulink_endpoint \\
     --v=0'
