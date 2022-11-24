@@ -8,13 +8,18 @@ usage="""usage: $0 [options]
 Options:
   -h  This help message.
   -d  Output directory for installation generated files.
+  -p  UbyonAC package file.
   -t  Ubyon TrustGate FQDN that AppConnector connects to.
 """
 
-UBYON_TG_FQDN="ulink.ubyon.com"
+AC_PACKAGE=
+CA_CERT=
+JWT_TOKEN=
+SSO_USER=
 OUTDIR="."
+UBYON_TG_FQDN="ulink.ubyon.com"
 
-while getopts "hd:t:" opt; do
+while getopts "hd:p:t:" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
@@ -22,6 +27,9 @@ while getopts "hd:t:" opt; do
       ;;
     d)
       OUTDIR="$OPTARG"
+      ;;
+    p)
+      AC_PACKAGE="$OPTARG"
       ;;
     t)
       UBYON_TG_FQDN="$OPTARG"
@@ -33,7 +41,15 @@ while getopts "hd:t:" opt; do
       ;;
   esac
 done
+
 shift $((OPTIND - 1))
+
+if [ $# != 0 ]; then
+  echo
+  echo -e "$usage" 1>&2
+  echo
+  exit -1
+fi
 
 if [ $(id -u) = 0 ] ; then
   echo
@@ -75,14 +91,60 @@ EOF
 
 install_packages()
 {
-  sudo grep "ubyon.github.io" /etc/apt/sources.list > /dev/null 2>&1 || setup_repo || return
+  if [ "$AC_PACKAGE" == "" ] ; then
+    sudo grep "ubyon.github.io" /etc/apt/sources.list > /dev/null 2>&1 || setup_repo || return
+    AC_PACKAGE=ubyon-ac
+  fi
 
   # Update package database.
   echo "==> Run apt-get update."
   sudo apt-get update > /dev/null
 
   echo "==> Install Ubyon packages."
-  sudo apt-get install -y binutils uuid-runtime ubyon-ac || return
+  sudo apt-get install -y binutils uuid-runtime $AC_PACKAGE || return
+
+  # Patch mars-ulink.yaml with the following attributes:
+  #  -. Host name
+  #  -. JWT token
+  #
+
+  local host_name=$(hostname)
+  sudo sed -i "s/# name: .*/name: $host_name/" /home/ubyon/configs/mars-ulink.yaml
+
+  if [ "$JWT_TOKEN" != "" ] ; then
+    sudo sed -i "s/# token: .*/token: $JWT_TOKEN/" /home/ubyon/configs/mars-ulink.yaml
+  fi
+}
+
+maybe_enable_cert_based_ssh()
+{
+  if [ "$CA_CERT" == "" ] ; then
+    return
+  fi
+
+  echo "==> Enable cert based SSH."
+  sudo tee /etc/ssh/ubyon_ca_cert.pub > /dev/null <<EOF
+`echo -n $CA_CERT | base64 -d`
+EOF
+
+  sudo mkdir -p /etc/ssh/auth_principals
+
+  sudo grep "TrustedUserCAKeys " /etc/ssh/sshd_config > /dev/null 2>&1 || \
+    sudo tee -a /etc/ssh/sshd_config > /dev/null <<EOF
+TrustedUserCAKeys /etc/ssh/ubyon_ca_cert.pub
+AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u
+EOF
+
+  # Add SSO user to allowed principal.
+  local principal=$(id -un)
+  local principal_file=/etc/ssh/auth_principals/$principal
+  sudo grep "$principal" $principal_file > /dev/null 2>&1 || \
+    sudo tee $principal_file > /dev/null <<EOF
+$principal
+$SSO_USER
+EOF
+
+  sudo systemctl restart sshd
 }
 
 install_daemon()
@@ -127,16 +189,28 @@ install_ubyonac()
   
   # Install daemon service files and start the daemon.
   local ulink_id=$(uuidgen)
-  local host_name=$(hostname)
-  local reg_info="{\"ulinkId\":\"$ulink_id\",\"ulinkName\":\"$host_name\"}"
-  local base64_reg_info=`echo -n $reg_info | base64 -w0`
-
   install_daemon $ulink_id $UBYON_TG_FQDN || return
+
+  maybe_enable_cert_based_ssh || return
 
   echo
   echo "==> Installation completed successfully."
-  echo "Please register your Ubyon AppConnector via: "
-  echo "  https://manage.ubyon.com/admin-portal/ulink/register?reg_info=$base64_reg_info"
+
+  if [ "$JWT_TOKEN" == "" ] ; then
+    echo
+    echo "==> JWT token is required to register the ubyonac."
+    echo "1. Please acquire a registration token via:"
+    echo "     https://manage.ubyon.com/<token_path>"
+    echo
+    echo "2. Save the token into /home/ubyon/configs/mars-ulink.yaml"
+    echo "3. Restart ubyonac daemon using following command: "
+    echo "     sudo systemctl restart ubyonac"
+    echo
+  else
+    echo
+    echo "==> Enjoy..."
+    echo
+  fi
 }
 
 mkdir -p "$OUTDIR"
