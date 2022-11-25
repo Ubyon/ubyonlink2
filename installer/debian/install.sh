@@ -15,7 +15,7 @@ AC_PACKAGE=
 CA_CERT=
 JWT_TOKEN=
 SSO_USER=
-UBYON_TG_FQDN="ulink.ubyon.com"
+UBYON_TG_FQDN=
 
 while getopts "hp:t:" opt; do
   case "$opt" in
@@ -64,6 +64,11 @@ INSTALL_FINISHED="/etc/systemd/system/ubyonac.service"
 if [ -f $INSTALL_FINISHED ] ; then
   echo "Install has already finished."
   exit
+fi
+
+# Initialize TG endpoint if it is not specified from user.
+if [ "$UBYON_TG_FQDN" == "" ] ; then
+  UBYON_TG_FQDN="ulink.ubyon.com"
 fi
 
 setup_repo()
