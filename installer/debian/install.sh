@@ -112,6 +112,8 @@ install_packages()
   sudo sed -i "s/# name: .*/name: $host_name/" /home/ubyon/configs/mars-ulink.yaml
 
   if [ "$JWT_TOKEN" != "" ] ; then
+    sudo grep "# token: " /home/ubyon/configs/mars-ulink.yaml > /dev/null \
+      2>&1 || sudo sed -i "s/token: .*/token: $JWT_TOKEN/" /home/ubyon/configs/mars-ulink.yaml
     sudo sed -i "s/# token: .*/token: $JWT_TOKEN/" /home/ubyon/configs/mars-ulink.yaml
   fi
 }
