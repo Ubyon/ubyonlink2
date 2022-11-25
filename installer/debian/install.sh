@@ -7,7 +7,6 @@ usage="""usage: $0 [options]
 
 Options:
   -h  This help message.
-  -d  Output directory for installation generated files.
   -p  UbyonAC package file.
   -t  Ubyon TrustGate FQDN that AppConnector connects to.
 """
@@ -16,17 +15,13 @@ AC_PACKAGE=
 CA_CERT=
 JWT_TOKEN=
 SSO_USER=
-OUTDIR="."
 UBYON_TG_FQDN="ulink.ubyon.com"
 
-while getopts "hd:p:t:" opt; do
+while getopts "hp:t:" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
       exit 0
-      ;;
-    d)
-      OUTDIR="$OPTARG"
       ;;
     p)
       AC_PACKAGE="$OPTARG"
@@ -65,7 +60,7 @@ if [[ "`lsb_release -cs`" != "bionic" && "`lsb_release -cs`" != "focal" && "`lsb
   exit -1
 fi
 
-INSTALL_FINISHED="$OUTDIR/.install_ubyonac"
+INSTALL_FINISHED="/etc/systemd/system/ubyonac.service"
 if [ -f $INSTALL_FINISHED ] ; then
   echo "Install has already finished."
   exit
@@ -212,8 +207,6 @@ install_ubyonac()
     echo
   fi
 }
-
-mkdir -p "$OUTDIR"
 
 install_ubyonac
 
