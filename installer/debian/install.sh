@@ -210,6 +210,4 @@ install_ubyonac()
 
 install_ubyonac
 
-touch $INSTALL_FINISHED
-
 echo
