@@ -9,6 +9,7 @@ Options:
   -h  This help message.
   -p  UbyonAC package file.
   -t  Ubyon TrustGate FQDN that AppConnector connects to.
+  -z  Use system default root CA certificate.
 """
 
 AC_PACKAGE=
@@ -16,8 +17,9 @@ CA_CERT=
 JWT_TOKEN=
 SSO_USER=
 UBYON_TG_FQDN=
+EXTRA_GFLAGS=
 
-while getopts "hp:t:" opt; do
+while getopts "hp:t:z" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
@@ -28,6 +30,9 @@ while getopts "hp:t:" opt; do
       ;;
     t)
       UBYON_TG_FQDN="$OPTARG"
+      ;;
+    z)
+      EXTRA_GFLAGS="--tls_ca_cert=default"
       ;;
     *)
       echo
@@ -169,7 +174,7 @@ Group=ubyon
 ExecStart=/bin/bash -c 'source /etc/profile.d/ubyon_env.sh && /home/ubyon/bin/mars-ulink \\
     --mars_cluster_id=$mars_cluster_id \\
     --mars_ulink_endpoint=$mars_ulink_endpoint \\
-    --v=0'
+    $EXTRA_GFLAGS --v=0'
 TimeoutSec=30
 Restart=on-failure
 RestartSec=20
