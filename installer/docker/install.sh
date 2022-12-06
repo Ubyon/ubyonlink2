@@ -49,8 +49,18 @@ if [ $(id -u) = 0 ] ; then
   exit -1
 fi
 
-docker ps > /dev/null 2>&1 || (echo "Script requires docker env. Add '$USER' to 'docker' " \
-  "group. Relogin then rerun installation." && exit)
+set +e
+docker ps > /dev/null 2>&1
+if [ $? -ne 0 ] ; then
+  echo "Script requires docker env."
+  echo
+  echo "If docker is installed, add '$USER' to 'docker' group via following command:"
+  echo "    sudo usermod -aG docker $USER"
+  echo "Relogin then rerun installation."
+  echo
+  exit
+fi
+set -e
 
 INSTALL_FINISHED="/etc/systemd/system/ubyonac.service"
 if [ -f $INSTALL_FINISHED ] ; then
