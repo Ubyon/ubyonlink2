@@ -56,7 +56,7 @@ if [ $? -ne 0 ] ; then
   echo
   echo "If docker is installed, add '$USER' to 'docker' group via following command:"
   echo "    sudo groupadd docker; sudo usermod -aG docker $USER"
-  echo "Relogin then rerun installation."
+  echo "Relogin then rerun installation. Reboot if still got error."
   echo
   exit
 fi
