@@ -12,7 +12,6 @@ Options:
 
 CA_CERT=
 JWT_TOKEN=
-SSO_USER=
 UBYON_TG_FQDN=
 SCRIPT_DIR=$(dirname $0)
 MARS_ULINK_CONFIG_DIR=$(readlink -f "${SCRIPT_DIR}")/ubyonac/configs
@@ -50,11 +49,8 @@ if [ $(id -u) = 0 ] ; then
   exit -1
 fi
 
-CHECK_DOCKER=`groups |grep docker || true`
-if [ "$CHECK_DOCKER" == "" ] ; then
-  echo "Script requires docker. User doesn't belong to 'docker' group."
-  exit
-fi
+docker ps || echo "Script requires docker env. Add '$USER' to 'docker' " \
+  "group. Relogin and rerun installation." && exit
 
 INSTALL_FINISHED="/etc/systemd/system/ubyonac.service"
 if [ -f $INSTALL_FINISHED ] ; then
@@ -114,22 +110,17 @@ maybe_enable_cert_based_ssh()
 `echo -n $CA_CERT | base64 -d`
 EOF
 
-  sudo mkdir -p /etc/ssh/auth_principals
-
   sudo grep "TrustedUserCAKeys " /etc/ssh/sshd_config > /dev/null 2>&1 || \
     sudo tee -a /etc/ssh/sshd_config > /dev/null <<EOF
 TrustedUserCAKeys /etc/ssh/ubyon_ca_cert.pub
-AuthorizedPrincipalsFile /etc/ssh/auth_principals/%u
 EOF
 
-  # Add SSO user to allowed principal.
-  local principal=$(id -un)
-  local principal_file=/etc/ssh/auth_principals/$principal
-  sudo grep "$principal" $principal_file > /dev/null 2>&1 || \
-    sudo tee $principal_file > /dev/null <<EOF
-$principal
-$SSO_USER
-EOF
+  # ED25519 key should be one of the supported key.
+  local accept_keys=$(sudo grep "PubkeyAcceptedKeyTypes" /etc/ssh/sshd_config || true)
+  if [ "$accept_keys" != "" ] ; then
+    echo $accept_keys | grep "ssh-ed25519-cert-v01@openssh.com" > /dev/null 2>&1 || \
+      sudo sed -i "s/^PubkeyAcceptedKeyTypes .*/&,ssh-ed25519-cert-v01@openssh.com/" /etc/ssh/sshd_config
+  fi
 
   sudo systemctl restart sshd
 }
