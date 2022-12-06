@@ -55,7 +55,7 @@ if [ $? -ne 0 ] ; then
   echo "Script requires docker env."
   echo
   echo "If docker is installed, add '$USER' to 'docker' group via following command:"
-  echo "    sudo usermod -aG docker $USER"
+  echo "    sudo groupadd docker; sudo usermod -aG docker $USER"
   echo "Relogin then rerun installation."
   echo
   exit
