@@ -49,8 +49,8 @@ if [ $(id -u) = 0 ] ; then
   exit -1
 fi
 
-docker ps > /dev/null 2>&1 || echo "Script requires docker env. Add '$USER' to 'docker' " \
-  "group. Relogin then rerun installation." && exit
+docker ps > /dev/null 2>&1 || (echo "Script requires docker env. Add '$USER' to 'docker' " \
+  "group. Relogin then rerun installation." && exit)
 
 INSTALL_FINISHED="/etc/systemd/system/ubyonac.service"
 if [ -f $INSTALL_FINISHED ] ; then
