@@ -91,6 +91,9 @@ data:
     # Nmae of the UbyonLink.
     # name: <ulink_name>
 
+    # Ssh principal.
+    # principal: <principal>
+
     # Short-lived JWT token that can be used to registered with Ubyon Cloud.
     #
     # token: <jwt_token>
@@ -101,8 +104,10 @@ data:
       #- serial: <Serial Number>
 EOF
 
+  local user_name=$(id -un)
   local host_name=$(hostname)
   sudo sed -i "s/# name: .*/name: $host_name/" $mars_ulink_config_file
+  sudo sed -i "s/# principal: .*/principal: $user_name/" $mars_ulink_config_file
 
   if [ "$JWT_TOKEN" != "" ] ; then
     sudo sed -i "s/# token: .*/token: $JWT_TOKEN/" $mars_ulink_config_file

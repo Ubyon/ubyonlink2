@@ -109,11 +109,14 @@ install_packages()
 
   # Patch mars-ulink.yaml with the following attributes:
   #  -. Host name
+  #  -. Ssh principal
   #  -. JWT token
   #
 
+  local user_name=$(id -un)
   local host_name=$(hostname)
   sudo sed -i "s/# name: .*/name: $host_name/" /home/ubyon/configs/mars-ulink.yaml
+  sudo sed -i "s/# principal: .*/principal: $user_name/" /home/ubyon/configs/mars-ulink.yaml
 
   if [ "$JWT_TOKEN" != "" ] ; then
     sudo grep "# token: " /home/ubyon/configs/mars-ulink.yaml > /dev/null \
