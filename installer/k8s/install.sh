@@ -91,6 +91,9 @@ data:
     # Nmae of the UbyonLink.
     # name: <ulink_name>
 
+    # Type of deployment: native/docker/k8s
+    deployment: k8s
+
     # Ssh principal.
     # principal: <principal>
 

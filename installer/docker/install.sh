@@ -92,6 +92,9 @@ install_packages()
 # Nmae of the UbyonLink.
 # name: <ulink_name>
 
+# Type of deployment: native/docker/k8s
+deployment: docker
+
 # Ssh principal.
 # principal: <principal>
 
