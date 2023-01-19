@@ -103,9 +103,14 @@ deployment: docker
 # token: <jwt_token>
 
 # System and user defined labels in list of key/value format.
-labels:
-  - service: ssh
-  #- serial: <Serial Number>
+#labels:
+#  - key: < key name>
+#    value: <key value>
+#  - key: <key name>
+#    command:
+#    - <command>
+#    - <arg1>
+#    - <arg2>
 EOF
 
   local user_name=$(id -un)
