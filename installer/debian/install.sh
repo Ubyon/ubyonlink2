@@ -17,6 +17,7 @@ CA_CERT=
 JWT_TOKEN=
 UBYON_TG_FQDN=
 EXTRA_GFLAGS=
+MARS_ULINK_CONFIG_DIR=/home/ubyon/configs
 
 while getopts "hp:t:z" opt; do
   case "$opt" in
@@ -112,16 +113,39 @@ install_packages()
   #  -. Ssh principal
   #  -. JWT token
   #
+  local mars_ulink_config_file=$MARS_ULINK_CONFIG_DIR/mars-ulink.yaml
+  sudo tee $mars_ulink_config_file > /dev/null <<EOF
+# Nmae of the UbyonLink.
+# name: <ulink_name>
+
+# Type of deployment: native/docker/k8s
+deployment: native
+
+# Ssh principal.
+# principal: <principal>
+
+# Short-lived JWT token that can be used to registered with Ubyon Cloud.
+#
+# token: <jwt_token>
+
+# System and user defined labels in list of key/value format.
+#labels:
+#  - key: < key name>
+#    value: <key value>
+#  - key: <key name>
+#    command:
+#    - <command>
+#    - <arg1>
+#    - <arg2>
+EOF
 
   local user_name=$(id -un)
   local host_name=$(hostname)
-  sudo sed -i "s/# name: .*/name: $host_name/" /home/ubyon/configs/mars-ulink.yaml
-  sudo sed -i "s/# principal: .*/principal: $user_name/" /home/ubyon/configs/mars-ulink.yaml
+  sudo sed -i "s/# name: .*/name: $host_name/" $mars_ulink_config_file
+  sudo sed -i "s/# principal: .*/principal: $user_name/" $mars_ulink_config_file
 
   if [ "$JWT_TOKEN" != "" ] ; then
-    sudo grep "# token: " /home/ubyon/configs/mars-ulink.yaml > /dev/null \
-      2>&1 || sudo sed -i "s/token: .*/token: $JWT_TOKEN/" /home/ubyon/configs/mars-ulink.yaml
-    sudo sed -i "s/# token: .*/token: $JWT_TOKEN/" /home/ubyon/configs/mars-ulink.yaml
+    sudo sed -i "s/# token: .*/token: $JWT_TOKEN/" $mars_ulink_config_file
   fi
 }
 
