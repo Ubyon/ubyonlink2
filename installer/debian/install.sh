@@ -108,12 +108,12 @@ install_packages()
   echo "==> Install Ubyon packages."
   sudo apt-get install -y binutils uuid-runtime $AC_PACKAGE || return
 
-  # Patch UbyonLink-server.yaml with the following attributes:
+  # Patch ubyonlink.yaml with the following attributes:
   #  -. Host name
   #  -. Ssh principal
   #  -. JWT token
   #
-  local mars_ulink_config_file=$MARS_ULINK_CONFIG_DIR/UbyonLink-server.yaml
+  local mars_ulink_config_file=$MARS_ULINK_CONFIG_DIR/ubyonlink.yaml
   sudo tee $mars_ulink_config_file > /dev/null <<EOF
 # Nmae of the UbyonLink.
 # name: <ulink_name>
@@ -230,7 +230,7 @@ install_ubyonac()
     echo "1. Please acquire a registration token via:"
     echo "     https://manage.ubyon.com/<token_path>"
     echo
-    echo "2. Save the token into /home/ubyon/configs/UbyonLink-server.yaml"
+    echo "2. Save the token into /home/ubyon/configs/ubyonlink.yaml"
     echo "3. Restart ubyonac daemon using following command: "
     echo "     sudo systemctl restart ubyonac"
     echo
