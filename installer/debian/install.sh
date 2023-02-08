@@ -17,6 +17,8 @@ CA_CERT=
 JWT_TOKEN=
 UBYON_TG_FQDN=
 EXTRA_GFLAGS=
+TLS_CLIENT_CERT=
+TLS_CLIENT_KEY=
 MARS_ULINK_CONFIG_DIR=/home/ubyon/configs
 
 while getopts "hp:t:z" opt; do
@@ -175,6 +177,26 @@ EOF
   sudo systemctl restart sshd
 }
 
+maybe_install_client_cert()
+{
+  if [ "$TLS_CLIENT_CERT" == "" ] ; then
+    return
+  fi
+
+  echo "==> Install gRPC client cert."
+
+  sudo tee /home/ubyon/certs/tls.key > /dev/null <<EOF
+`echo -n $TLS_CLIENT_KEY | base64 -d`
+EOF
+  sudo chown ubyon:ubyon /home/ubyon/certs/tls.key
+  sudo chmod 600 /home/ubyon/certs/tls.key
+
+  sudo tee /home/ubyon/certs/tls.crt > /dev/null <<EOF
+`echo -n $TLS_CLIENT_CERT | base64 -d`
+EOF
+  sudo chown ubyon:ubyon /home/ubyon/certs/tls.crt
+}
+
 install_daemon()
 {
   echo "==> Install service ubyonac."
@@ -215,6 +237,9 @@ install_ubyonac()
   # Install packages.
   install_packages || return
   
+  # Install gRPC client cert if it is given.
+  maybe_install_client_cert || return
+
   # Install daemon service files and start the daemon.
   local ulink_id=$(uuidgen)
   install_daemon $ulink_id $UBYON_TG_FQDN || return
