@@ -20,7 +20,7 @@ SCRIPT_DIR=$(dirname $0)
 MARS_ULINK_CONFIG_DIR=$(readlink -f "${SCRIPT_DIR}")/ubyonac/configs
 MARS_ULINK_CERTS_DIR=$(readlink -f "${SCRIPT_DIR}")/ubyonac/certs
 
-while getopts "hp:t:" opt; do
+while getopts "hp:t:z" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
