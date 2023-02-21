@@ -214,7 +214,7 @@ spec:
         command: ["/home/ubyon/bin/mars"]
         args: ["--mars_cluster_id=$mars_cluster_id",
                "--mars_ulink_endpoint=$mars_ulink_endpoint",
-               "$EXTRA_GFLAGS --v=0"]
+               "$EXTRA_GFLAGS", "--v=0"]
         env:
           - name: MY_POD_NAME
             valueFrom:
