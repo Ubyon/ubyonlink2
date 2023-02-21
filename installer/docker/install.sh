@@ -13,8 +13,12 @@ Options:
 CA_CERT=
 JWT_TOKEN=
 UBYON_TG_FQDN=
+EXTRA_GFLAGS=
+TLS_CLIENT_CERT=
+TLS_CLIENT_KEY=
 SCRIPT_DIR=$(dirname $0)
 MARS_ULINK_CONFIG_DIR=$(readlink -f "${SCRIPT_DIR}")/ubyonac/configs
+MARS_ULINK_CERTS_DIR=$(readlink -f "${SCRIPT_DIR}")/ubyonac/certs
 
 while getopts "hp:t:" opt; do
   case "$opt" in
@@ -24,6 +28,9 @@ while getopts "hp:t:" opt; do
       ;;
     t)
       UBYON_TG_FQDN="$OPTARG"
+      ;;
+    z)
+      EXTRA_GFLAGS="--tls_ca_cert=default"
       ;;
     *)
       echo
@@ -88,7 +95,7 @@ install_packages()
   #
   mkdir -p $MARS_ULINK_CONFIG_DIR
   local mars_ulink_config_file=$MARS_ULINK_CONFIG_DIR/ubyonlink.yaml
-  sudo tee $mars_ulink_config_file > /dev/null <<EOF
+  tee $mars_ulink_config_file > /dev/null <<EOF
 # Nmae of the UbyonLink.
 # name: <ulink_name>
 
@@ -115,11 +122,11 @@ EOF
 
   local user_name=$(id -un)
   local host_name=$(hostname)
-  sudo sed -i "s/# name: .*/name: $host_name/" $mars_ulink_config_file
-  sudo sed -i "s/# principal: .*/principal: $user_name/" $mars_ulink_config_file
+  sed -i "s/# name: .*/name: $host_name/" $mars_ulink_config_file
+  sed -i "s/# principal: .*/principal: $user_name/" $mars_ulink_config_file
 
   if [ "$JWT_TOKEN" != "" ] ; then
-    sudo sed -i "s/# token: .*/token: $JWT_TOKEN/" $mars_ulink_config_file
+    sed -i "s/# token: .*/token: $JWT_TOKEN/" $mars_ulink_config_file
   fi
 }
 
@@ -149,6 +156,25 @@ EOF
   sudo systemctl restart sshd
 }
 
+maybe_install_client_cert()
+{
+  if [ "$TLS_CLIENT_CERT" == "" ] ; then
+    return
+  fi
+
+  echo "==> Install gRPC client cert."
+
+  mkdir -p $MARS_ULINK_CERTS_DIR
+  tee $MARS_ULINK_CERTS_DIR/tls.key > /dev/null <<EOF
+`echo -n $TLS_CLIENT_KEY | base64 -d`
+EOF
+  chmod 600 $MARS_ULINK_CERTS_DIR/tls.key
+
+  tee $MARS_ULINK_CERTS_DIR/tls.crt > /dev/null <<EOF
+`echo -n $TLS_CLIENT_CERT | base64 -d`
+EOF
+}
+
 install_daemon()
 {
   echo "==> Install service ubyonac."
@@ -170,10 +196,11 @@ Group=$group_name
 ExecStartPre=/usr/bin/docker pull quay.io/ubyon/mars-ulink:1.0.0
 ExecStart=/usr/bin/docker run --rm --network host --name ubyonac \\
     --volume $MARS_ULINK_CONFIG_DIR:/home/ubyon/configs:z \\
+    --volume $MARS_ULINK_CERTS_DIR:/etc/tls:z \\
     quay.io/ubyon/mars-ulink:1.0.0 /home/ubyon/bin/mars \\
     --mars_cluster_id=$mars_cluster_id \\
     --mars_ulink_endpoint=$mars_ulink_endpoint \\
-    --v=0
+    $EXTRA_GFLAGS --v=0
 ExecStop=/usr/bin/docker stop ubyonac
 Restart=always
 RestartSec=20
@@ -193,6 +220,9 @@ install_ubyonac()
   # Install packages.
   install_packages || return
   
+  # Install gRPC client cert if it is given.
+  maybe_install_client_cert || return
+
   # Install daemon service files and start the daemon.
   local ulink_id=$(uuidgen)
   install_daemon $ulink_id $UBYON_TG_FQDN || return
