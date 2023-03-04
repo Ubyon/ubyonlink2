@@ -131,3 +131,10 @@ ubyonac.yaml
 ubyonlink.yaml
 .install_ubyonac
 .install_ubyonlink
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+.DS_STORE

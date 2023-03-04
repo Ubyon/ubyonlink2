@@ -9,12 +9,13 @@ Options:
   -h  This help message.
   -d  Output directory for installation generated files.
   -t  Ubyon TrustGate FQDN that AppConnector connects to.
+  -k  Enable k8s access
 """
 
 UBYON_TG_FQDN="ulink.ubyon.com"
 OUTDIR="."
 
-while getopts "hd:t:" opt; do
+while getopts "hd:t:k:" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
@@ -26,6 +27,9 @@ while getopts "hd:t:" opt; do
     t)
       UBYON_TG_FQDN="$OPTARG"
       ;;
+    k)
+      ENABLE_K8S_ACCESS="$OPTARG"
+      ;;
     *)
       echo
       echo -e "$usage" 1>&2
@@ -34,6 +38,11 @@ while getopts "hd:t:" opt; do
   esac
 done
 shift $((OPTIND - 1))
+
+if [ "$ENABLE_K8S_ACCESS" == true ]; then
+  echo "Enabling kubernetes access !!!!"
+  exit
+fi
 
 INSTALL_FINISHED="$OUTDIR/.install_ubyonac"
 
