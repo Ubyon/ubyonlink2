@@ -39,14 +39,8 @@ while getopts "hd:t:k:" opt; do
 done
 shift $((OPTIND - 1))
 
-#enable_k8s_access()
-#{
-#  K8S_SA_FILE=wget
-#}
-
 if [ "$ENABLE_K8S_ACCESS" == true ]; then
   echo "Enabling kubernetes access !!!!"
-  enable_k8s_access
   exit
 fi
 
