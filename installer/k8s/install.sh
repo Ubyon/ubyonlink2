@@ -79,6 +79,14 @@ install_packages()
     sudo apt-get update > /dev/null
     sudo apt-get install -y uuid-runtime > /dev/null
   fi
+}
+
+install_configmap()
+{
+  echo "==> Install ubyonac configmap."
+
+  local mars_cluster_id="$1"
+  local mars_ulink_endpoint="$2"
 
   # Patch ubyonlink.yaml with the following attributes:
   #  -. Host name
@@ -87,6 +95,15 @@ install_packages()
   mkdir -p $MARS_ULINK_CONFIG_DIR
   local mars_ulink_config_file=$MARS_ULINK_CONFIG_DIR/ubyonlink.yaml
   tee $mars_ulink_config_file > /dev/null <<EOF
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ubyonac-mgmt
+data:
+  MARS_CLUSTER_ID: <mars_cluster_id>
+  CORE_MGMT_ENDPOINT: <core_mgmt_endpoint>
+  CORE_ACCESS_TOKEN: <core_access_token>
+---
 kind: ConfigMap
 apiVersion: v1
 metadata:
@@ -123,9 +140,12 @@ EOF
   local host_name=$(hostname)
   sed -i "s/# name: .*/name: $host_name/" $mars_ulink_config_file
   sed -i "s/# principal: .*/principal: $user_name/" $mars_ulink_config_file
+  sed -i "s/MARS_CLUSTER_ID: .*/MARS_CLUSTER_ID: $mars_cluster_id/" $mars_ulink_config_file
+  sed -i "s/CORE_MGMT_ENDPOINT: .*/CORE_MGMT_ENDPOINT: $mars_ulink_endpoint/" $mars_ulink_config_file
 
   if [ "$JWT_TOKEN" != "" ] ; then
     sed -i "s/# token: .*/token: $JWT_TOKEN/" $mars_ulink_config_file
+    sed -i "s/CORE_ACCESS_TOKEN: .*/CORE_ACCESS_TOKEN: $JWT_TOKEN/" $mars_ulink_config_file
   fi
 
   kubectl apply -f $mars_ulink_config_file
@@ -257,6 +277,7 @@ install_ubyonac()
 
   # Install daemon service files and start the daemon.
   local ulink_id=$(uuidgen)
+  install_configmap $ulink_id $UBYON_TG_FQDN || return
   install_daemon $ulink_id $UBYON_TG_FQDN || return
 
   maybe_enable_cert_based_ssh || return
