@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ubyonac-k8s-sa-update
+spec:
+  backoffLimit: 16
+  template:
+    spec:
+      containers:
+      - name: update
+        image: quay.io/ubyon/acbot:1.0.0
+        command: ["/home/ubyon/tests/ft/register_update.py"]
+        args: []
+        env:
+          - name: K8S_SA_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: ubyon-api-service-account-token
+                key: token
+        envFrom:
+          - configMapRef:
+              name: ubyonac-mgmt
+      restartPolicy: OnFailure
