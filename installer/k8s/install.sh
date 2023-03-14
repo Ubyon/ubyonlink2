@@ -209,7 +209,8 @@ install_daemon()
   local mars_ulink_endpoint="$2"
 
   # Deployment yaml.
-  cat > $MARS_ULINK_CONFIG_DIR/ubyonac.yaml <<EOF
+  if [ "$TLS_CLIENT_CERT" != "" ] ; then
+    cat > $MARS_ULINK_CONFIG_DIR/ubyonac.yaml <<EOF
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -263,6 +264,56 @@ spec:
           secret:
             secretName: ubyonac-client-cert
 EOF
+  else
+    cat > $MARS_ULINK_CONFIG_DIR/ubyonac.yaml <<EOF
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ubyonac
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ubyonac
+  serviceName: ubyonac
+  template:
+    metadata:
+      labels:
+        app: ubyonac
+        version: 1.0.0
+    spec:
+      hostNetwork: true
+      containers:
+      - name: ubyonac
+        imagePullPolicy: Always
+        image: quay.io/ubyon/mars-ulink:1.0.0
+        command: ["/home/ubyon/bin/mars"]
+        args: ["--mars_cluster_id=$mars_cluster_id",
+               "--mars_ulink_endpoint=$mars_ulink_endpoint",
+               "$EXTRA_GFLAGS", "--v=0"]
+        env:
+          - name: MY_POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: MY_POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: MY_POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+        volumeMounts:
+          - name: ubyonac
+            mountPath: /home/ubyon/configs
+      volumes:
+        - name: ubyonac
+          configMap:
+            name: ubyonac
+            defaultMode: 0644
+EOF
+  fi
 
   kubectl apply -f $MARS_ULINK_CONFIG_DIR/ubyonac.yaml
 }

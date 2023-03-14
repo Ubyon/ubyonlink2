@@ -184,7 +184,8 @@ install_daemon()
   local user_name=$(id -u -n)
   local group_name=$(id -g -n)
 
-  sudo tee /etc/systemd/system/ubyonac.service > /dev/null <<EOF
+  if [ "$TLS_CLIENT_CERT" != "" ] ; then
+    sudo tee /etc/systemd/system/ubyonac.service > /dev/null <<EOF
 [Unit]
 Description=UbyonLink
 After=docker.service
@@ -208,6 +209,31 @@ RestartSec=20
 [Install]
 WantedBy=multi-user.target
 EOF
+  else
+    sudo tee /etc/systemd/system/ubyonac.service > /dev/null <<EOF
+[Unit]
+Description=UbyonLink
+After=docker.service
+
+[Service]
+TimeoutStartSec=0
+User=$user_name
+Group=$group_name
+ExecStartPre=/usr/bin/docker pull quay.io/ubyon/mars-ulink:1.0.0
+ExecStart=/usr/bin/docker run --rm --network host --name ubyonac \\
+    --volume $MARS_ULINK_CONFIG_DIR:/home/ubyon/configs:z \\
+    quay.io/ubyon/mars-ulink:1.0.0 /home/ubyon/bin/mars \\
+    --mars_cluster_id=$mars_cluster_id \\
+    --mars_ulink_endpoint=$mars_ulink_endpoint \\
+    $EXTRA_GFLAGS --v=0
+ExecStop=/usr/bin/docker stop ubyonac
+Restart=always
+RestartSec=20
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  fi
 
   # Start ubyonac daemon.
   sudo systemctl daemon-reload
