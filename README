@@ -1,0 +1,149 @@
+
+------------------------------------------------------------
+ About this README
+------------------------------------------------------------
+
+This README is intended to provide quick and to-the-point documentation for
+technical users intending to use UbyonLinkServer themsevles.
+
+
+------------------------------------------------------------
+ What is UbyonLinkServer?
+------------------------------------------------------------
+
+The UbyonLinkServer is a very lean binary that provides dial-out functionality.
+It does reverse connect back to Ubyon TrustGate and can tunnel any TCP traffic
+over Http2/s (gRPC). It allows users to access any TCP servers behind the NAT
+or firewall through Ubyon TrustGate. The following diagram describes the
+typical traffic flows:
+
+       Https              Tcp over Http2/s                 Tcp
+ User <------> TrustGate <-----------------> UlinkServer <-----> Ssh or Web Server
+
+
+------------------------------------------------------------
+ Required dependencies
+------------------------------------------------------------
+
+UbyonLinkServer is a simple Tcp proxy over Http2/s. It requires only the
+following software dependencies:
+
+    1) libglog (https://github.com/google/glog)
+       C++ implementation of the google logging module.
+
+    2) libgflags (https://github.com/gflags/gflags)
+       C++ library that implements command line flags processing.
+
+    3) libcrypto and libssl
+       OpenSSL usage
+
+    4) libboost
+       Boost C++ libraries, mainly using the string parsing support.
+
+    5) libprotobuf (https://github.com/protocolbuffers/protobuf)
+       Ubyon uses protobuf as the interface between different microservices
+
+    6) libgrpc++ (https://github.com/grpc/grpc)
+       Transport layer between UbyonLinkServer and TrustGate.
+
+    7) libyaml-cpp (https://github.com/jbeder/yaml-cpp)
+       UbyonLinkServer supports configuration in Yaml format
+
+
+------------------------------------------------------------
+ Security implications
+------------------------------------------------------------
+
+UbyonLinkServer requires very little footprint of cpu, memory, and disk space.
+It can run in a daemon as part of a user VM. No dedicated VM is required. It is
+a user space service that doesnot require 'sudo' privilege.
+
+W.r.t network security, it uses port 443 Http2/s for outgoing traffic. This
+allows the traffic to go through typical Companry firewall rules without an
+issue. Internally it runs a Http Server that listens to an ephemeral port for
+debug purpose. It does not require any reserved port on the user VM.
+
+
+------------------------------------------------------------
+ Deployment
+------------------------------------------------------------
+
+UbyonLinkServer supports three types of deployments: Native, Docker, or K8s.
+
+1) Supported distributions
+
+    Native:
+        * Ubuntu 1804, 2004, and 2204
+
+    Docker:
+        * All Linux distributions (except MacOS)
+
+    K8s:
+        * All Linux distributions
+
+2) Native deployment (as sudo)
+
+    $ curl \
+    https://raw.githubusercontent.com/Ubyon/ubyonlink/v2/installer/debian/install.sh | \
+    bash
+
+3) Docker deployment (as sudo)
+
+    $ curl \
+    https://raw.githubusercontent.com/Ubyon/ubyonlink/v2/installer/docker/install.sh | \
+    bash
+        
+4) K8s deployment (as sudo)
+
+    $ curl \
+    https://raw.githubusercontent.com/Ubyon/ubyonlink/v2/installer/k8s/install.sh | \
+    bash
+
+    
+------------------------------------------------------------
+ Upgrade
+------------------------------------------------------------
+
+1) Native
+
+    $ sudo apt-get update -y && sudo apt-get install -y ubyon-ac
+
+2) Docker
+
+    $ sudo systemctl restart ubyonac
+
+3) K8s
+
+    $ kubectl delete pod ubyonac-0
+
+It is recommended that user enables the auto-upgrade of UbyonLinkServer so it
+can pick up the latest enhancement automatically from the Ubyon release cycles.
+User can simplify add the above command to his cronjob service to enable the
+auto-upgrade.
+
+
+------------------------------------------------------------
+ Reporting problems
+------------------------------------------------------------
+
+Feel free to run the following command from the VM where UbyonLinkServer is
+installed  to report an issue. It will take care of compress and upload the
+logs. Ubyon support team will be notified via Slack when the upload is completed.
+
+1) Native
+
+    $ curl \
+    https://raw.githubusercontent.com/Ubyon/ubyonlink/main/installer/debian/upload.sh | \
+    bash
+
+2) Docker
+
+    $ curl \
+    https://raw.githubusercontent.com/Ubyon/ubyonlink/main/installer/docker/upload.sh | \
+    bash
+
+3) K8s
+
+    $ curl \
+    https://raw.githubusercontent.com/Ubyon/ubyonlink/main/installer/k8s/upload.sh | \
+    bash

@@ -1,2 +1,0 @@
-# ubyonac
-Ubyon AppConnector
