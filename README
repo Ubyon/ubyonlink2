@@ -28,7 +28,7 @@ recent release.
 
     1) CPU/MEM usage
        PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
-       518 ubyon     20   0  169024  26620  20460 S   0.0   2.7   0:00.32 mars-ulink
+       518 ubyon     20   0  169024  12316   5476 S   0.0   1.2   0:02.05 mars-ulink
 
     2) DISK usage
        ubyon@:~$ du -hs /home/ubyon/
