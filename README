@@ -21,6 +21,19 @@ typical traffic flows:
  User <------> TrustGate <-----------------> UlinkServer <-----> Ssh or Web Server
 
 
+The UbyonLinkServer native deployment is a self-contained package. The whole
+software bits including dependent libraries are installed under "/home/ubyon/"
+directory. Here is a statistics of its cpu/memory/disk usage from the most
+recent release.
+
+    1) CPU/MEM usage
+       PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+       518 ubyon     20   0  169024  26620  20460 S   0.0   2.7   0:00.32 mars-ulink
+
+    2) DISK usage
+       ubyon@:~$ du -hs /home/ubyon/
+       39M     /home/ubyon/
+
 ------------------------------------------------------------
  Required dependencies
 ------------------------------------------------------------
@@ -92,14 +105,14 @@ UbyonLinkServer supports three types of deployments: Native, Docker, or K8s.
     $ curl \
     https://raw.githubusercontent.com/Ubyon/ubyonlink/v2/installer/docker/install.sh | \
     bash
-        
+
 4) K8s deployment (as sudo)
 
     $ curl \
     https://raw.githubusercontent.com/Ubyon/ubyonlink/v2/installer/k8s/install.sh | \
     bash
 
-    
+
 ------------------------------------------------------------
  Upgrade
 ------------------------------------------------------------
