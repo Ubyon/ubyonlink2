@@ -7,24 +7,34 @@ usage="""usage: $0 [options]
 
 Options:
   -h  This help message.
-  -d  Output directory for installation generated files.
+  -p  UbyonAC package file.
   -t  Ubyon TrustGate FQDN that AppConnector connects to.
+  -z  Use system default root CA certificate.
 """
 
-UBYON_TG_FQDN="ulink.ubyon.com"
-OUTDIR="."
+AC_PACKAGE=
+CA_CERT=
+JWT_TOKEN=
+UBYON_TG_FQDN=
+EXTRA_GFLAGS=
+TLS_CLIENT_CERT=
+TLS_CLIENT_KEY=
+MARS_ULINK_CONFIG_DIR=/home/ubyon/configs
 
-while getopts "hd:t:" opt; do
+while getopts "hp:t:z" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
       exit 0
       ;;
-    d)
-      OUTDIR="$OPTARG"
+    p)
+      AC_PACKAGE="$OPTARG"
       ;;
     t)
       UBYON_TG_FQDN="$OPTARG"
+      ;;
+    z)
+      EXTRA_GFLAGS="--tls_ca_cert=default"
       ;;
     *)
       echo
@@ -33,7 +43,15 @@ while getopts "hd:t:" opt; do
       ;;
   esac
 done
+
 shift $((OPTIND - 1))
+
+if [ $# != 0 ]; then
+  echo
+  echo -e "$usage" 1>&2
+  echo
+  exit -1
+fi
 
 if [ $(id -u) = 0 ] ; then
   echo
@@ -49,10 +67,15 @@ if [[ "`lsb_release -cs`" != "bionic" && "`lsb_release -cs`" != "focal" && "`lsb
   exit -1
 fi
 
-INSTALL_FINISHED="$OUTDIR/.install_ubyonac"
+INSTALL_FINISHED="/etc/systemd/system/ubyonac.service"
 if [ -f $INSTALL_FINISHED ] ; then
   echo "Install has already finished."
   exit
+fi
+
+# Initialize TG endpoint if it is not specified from user.
+if [ "$UBYON_TG_FQDN" == "" ] ; then
+  UBYON_TG_FQDN="ulink.ubyon.com"
 fi
 
 setup_repo()
@@ -75,14 +98,103 @@ EOF
 
 install_packages()
 {
-  sudo grep "ubyon.github.io" /etc/apt/sources.list > /dev/null 2>&1 || setup_repo || return
+  if [ "$AC_PACKAGE" == "" ] ; then
+    sudo grep "ubyon.github.io" /etc/apt/sources.list > /dev/null 2>&1 || setup_repo || return
+    AC_PACKAGE=ubyon-ac
+  fi
 
   # Update package database.
   echo "==> Run apt-get update."
   sudo apt-get update > /dev/null
 
   echo "==> Install Ubyon packages."
-  sudo apt-get install -y binutils uuid-runtime ubyon-ac || return
+  sudo apt-get install -y binutils uuid-runtime $AC_PACKAGE || return
+
+  # Patch ubyonlink.yaml with the following attributes:
+  #  -. Host name
+  #  -. Ssh principal
+  #  -. JWT token
+  #
+  local mars_ulink_config_file=$MARS_ULINK_CONFIG_DIR/ubyonlink.yaml
+  sudo tee $mars_ulink_config_file > /dev/null <<EOF
+# Nmae of the UbyonLink.
+# name: <ulink_name>
+
+# Type of deployment: native/docker/k8s
+deployment: native
+
+# Ssh principal.
+# principal: <principal>
+
+# Short-lived JWT token that can be used to registered with Ubyon Cloud.
+#
+# token: <jwt_token>
+
+# System and user defined labels in list of key/value format.
+#labels:
+#  - key: < key name>
+#    value: <key value>
+#  - key: <key name>
+#    command:
+#    - <command>
+#    - <arg1>
+#    - <arg2>
+EOF
+
+  local user_name=$(id -un)
+  local host_name=$(hostname)
+  sudo sed -i "s/# name: .*/name: $host_name/" $mars_ulink_config_file
+  sudo sed -i "s/# principal: .*/principal: $user_name/" $mars_ulink_config_file
+
+  if [ "$JWT_TOKEN" != "" ] ; then
+    sudo sed -i "s/# token: .*/token: $JWT_TOKEN/" $mars_ulink_config_file
+  fi
+}
+
+maybe_enable_cert_based_ssh()
+{
+  if [ "$CA_CERT" == "" ] ; then
+    return
+  fi
+
+  echo "==> Enable cert based SSH."
+  sudo tee /etc/ssh/ubyon_ca_cert.pub > /dev/null <<EOF
+`echo -n $CA_CERT | base64 -d`
+EOF
+
+  sudo grep "TrustedUserCAKeys " /etc/ssh/sshd_config > /dev/null 2>&1 || \
+    sudo tee -a /etc/ssh/sshd_config > /dev/null <<EOF
+TrustedUserCAKeys /etc/ssh/ubyon_ca_cert.pub
+EOF
+
+  # ED25519 key should be one of the supported key.
+  local accept_keys=$(sudo grep "PubkeyAcceptedKeyTypes" /etc/ssh/sshd_config || true)
+  if [ "$accept_keys" != "" ] ; then
+    echo $accept_keys | grep "ssh-ed25519-cert-v01@openssh.com" > /dev/null 2>&1 || \
+      sudo sed -i "s/^PubkeyAcceptedKeyTypes .*/&,ssh-ed25519-cert-v01@openssh.com/" /etc/ssh/sshd_config
+  fi
+
+  sudo systemctl restart sshd
+}
+
+maybe_install_client_cert()
+{
+  if [ "$TLS_CLIENT_CERT" == "" ] ; then
+    return
+  fi
+
+  echo "==> Install gRPC client cert."
+
+  sudo tee /home/ubyon/certs/tls.key > /dev/null <<EOF
+`echo -n $TLS_CLIENT_KEY | base64 -d`
+EOF
+  sudo chown ubyon:ubyon /home/ubyon/certs/tls.key
+  sudo chmod 600 /home/ubyon/certs/tls.key
+
+  sudo tee /home/ubyon/certs/tls.crt > /dev/null <<EOF
+`echo -n $TLS_CLIENT_CERT | base64 -d`
+EOF
+  sudo chown ubyon:ubyon /home/ubyon/certs/tls.crt
 }
 
 install_daemon()
@@ -105,7 +217,7 @@ Group=ubyon
 ExecStart=/bin/bash -c 'source /etc/profile.d/ubyon_env.sh && /home/ubyon/bin/mars-ulink \\
     --mars_cluster_id=$mars_cluster_id \\
     --mars_ulink_endpoint=$mars_ulink_endpoint \\
-    --v=0'
+    $EXTRA_GFLAGS --v=0'
 TimeoutSec=30
 Restart=on-failure
 RestartSec=20
@@ -125,24 +237,35 @@ install_ubyonac()
   # Install packages.
   install_packages || return
   
+  # Install gRPC client cert if it is given.
+  maybe_install_client_cert || return
+
   # Install daemon service files and start the daemon.
   local ulink_id=$(uuidgen)
-  local host_name=$(hostname)
-  local reg_info="{\"ulinkId\":\"$ulink_id\",\"ulinkName\":\"$host_name\"}"
-  local base64_reg_info=`echo -n $reg_info | base64 -w0`
-
   install_daemon $ulink_id $UBYON_TG_FQDN || return
+
+  maybe_enable_cert_based_ssh || return
 
   echo
   echo "==> Installation completed successfully."
-  echo "Please register your Ubyon AppConnector via: "
-  echo "  https://manage.ubyon.com/admin-portal/ulink/register?reg_info=$base64_reg_info"
+
+  if [ "$JWT_TOKEN" == "" ] ; then
+    echo
+    echo "==> JWT token is required to register the ubyonac."
+    echo "1. Please acquire a registration token via:"
+    echo "     https://manage.ubyon.com/<token_path>"
+    echo
+    echo "2. Save the token into /home/ubyon/configs/ubyonlink.yaml"
+    echo "3. Restart ubyonac daemon using following command: "
+    echo "     sudo systemctl restart ubyonac"
+    echo
+  else
+    echo
+    echo "==> Enjoy..."
+    echo
+  fi
 }
 
-mkdir -p "$OUTDIR"
-
 install_ubyonac
-
-touch $INSTALL_FINISHED
 
 echo
