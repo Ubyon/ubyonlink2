@@ -20,7 +20,9 @@ SCRIPT_DIR=$(dirname $0)
 MARS_ULINK_CONFIG_DIR=$(readlink -f "${SCRIPT_DIR}")/ubyonac/configs
 MARS_ULINK_CERTS_DIR=$(readlink -f "${SCRIPT_DIR}")/ubyonac/certs
 
-while getopts "hp:t:z" opt; do
+key_cnt=0
+last_key_cnt=0
+while getopts "hp:t:k:v:z" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
@@ -31,6 +33,15 @@ while getopts "hp:t:z" opt; do
       ;;
     z)
       EXTRA_GFLAGS="--tls_ca_cert=default"
+      ;;
+    k)
+      KEYS[${key_cnt}]="$OPTARG"
+      VALUES[${key_cnt}]="Default"
+      last_key_cnt=${key_cnt}
+      key_cnt=$(( ${key_cnt} + 1 ))
+      ;;
+    v)
+      VALUES[${last_key_cnt}]="$OPTARG"
       ;;
     *)
       echo
@@ -146,6 +157,19 @@ EOF
   if [ "$JWT_TOKEN" != "" ] ; then
     sed -i "s/# token: .*/token: $JWT_TOKEN/" $mars_ulink_config_file
     sed -i "s/CORE_ACCESS_TOKEN: .*/CORE_ACCESS_TOKEN: $JWT_TOKEN/" $mars_ulink_config_file
+  fi
+
+  if [ $key_cnt -gt 0 ]; then
+    indent="    "
+    echo "${indent}""labels:" | sudo tee -a $mars_ulink_config_file > /dev/null
+    cnt=0
+    while  [ ${cnt} -lt ${key_cnt} ]; do
+      key=${KEYS[${cnt}]}
+      val=${VALUES[${cnt}]}
+      echo "${indent}""  - key: ${key}" | sudo tee -a $mars_ulink_config_file > /dev/null
+      echo "${indent}""    value: ${val}" | sudo tee -a $mars_ulink_config_file > /dev/null
+      cnt=$(( ${cnt}+1 ))
+    done
   fi
 
   kubectl apply -f $mars_ulink_config_file
