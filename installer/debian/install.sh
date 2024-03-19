@@ -10,6 +10,9 @@ Options:
   -p  UbyonAC package file.
   -t  Ubyon TrustGate FQDN that AppConnector connects to.
   -z  Use system default root CA certificate.
+  -n  ulink-server name (default hostname)
+  -k  specify a label together with -v
+  -v  specify a label together with -k
 """
 
 AC_PACKAGE=
@@ -20,10 +23,11 @@ EXTRA_GFLAGS=
 TLS_CLIENT_CERT=
 TLS_CLIENT_KEY=
 MARS_ULINK_CONFIG_DIR=/home/ubyon/configs
+HOST_NAME=$(hostname)
 
 key_cnt=0
 last_key_cnt=0
-while getopts "hp:t:k:v:z" opt; do
+while getopts "hp:t:k:v:n:z" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
@@ -37,6 +41,9 @@ while getopts "hp:t:k:v:z" opt; do
       ;;
     z)
       EXTRA_GFLAGS="--tls_ca_cert=default"
+      ;;
+    n)
+      HOST_NAME="$OPTARG"
       ;;
     k)
       KEYS[${key_cnt}]="$OPTARG"
@@ -153,7 +160,7 @@ deployment: native
 EOF
 
   local user_name=$(id -un)
-  local host_name=$(hostname)
+  local host_name=${HOST_NAME}
   sudo sed -i "s/# name: .*/name: $host_name/" $mars_ulink_config_file
   sudo sed -i "s/# principal: .*/principal: $user_name/" $mars_ulink_config_file
 

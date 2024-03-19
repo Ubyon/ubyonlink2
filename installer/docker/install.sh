@@ -8,6 +8,10 @@ usage="""usage: $0 [options]
 Options:
   -h  This help message.
   -t  Ubyon TrustGate FQDN that AppConnector connects to.
+  -z  Use system default root CA certificate.
+  -n  ulink-server name (default hostname)
+  -k  specify a label together with -v
+  -v  specify a label together with -k
 """
 
 CA_CERT=
@@ -19,10 +23,11 @@ TLS_CLIENT_KEY=
 SCRIPT_DIR=$(dirname $0)
 MARS_ULINK_CONFIG_DIR=$(readlink -f "${SCRIPT_DIR}")/ubyonac/configs
 MARS_ULINK_CERTS_DIR=$(readlink -f "${SCRIPT_DIR}")/ubyonac/certs
+HOST_NAME=$(hostname)
 
 key_cnt=0
 last_key_cnt=0
-while getopts "hp:t:k:v:z" opt; do
+while getopts "ht:k:v:n:z" opt; do
   case "$opt" in
     h)
       echo -e "$usage"
@@ -33,6 +38,9 @@ while getopts "hp:t:k:v:z" opt; do
       ;;
     z)
       EXTRA_GFLAGS="--tls_ca_cert=default"
+      ;;
+    n)
+      HOST_NAME="$OPTARG"
       ;;
     k)
       KEYS[${key_cnt}]="$OPTARG"
@@ -132,7 +140,7 @@ deployment: docker
 EOF
 
   local user_name=$(id -un)
-  local host_name=$(hostname)
+  local host_name=${HOST_NAME}
   sed -i "s/# name: .*/name: $host_name/" $mars_ulink_config_file
   sed -i "s/# principal: .*/principal: $user_name/" $mars_ulink_config_file
 
